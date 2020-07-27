@@ -1,0 +1,218 @@
+---
+title: "Dimensionality Reduction"
+author: "Duncan Wahira"
+date: "7/27/2020"
+output: pdf_document
+---
+
+Perform and visualize PCA in the given dataset 
+
+
+## Load Libraries
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tibble)
+library(pander)
+library(Hmisc)
+library(tidyverse)
+library(corrplot)
+library(caret)
+
+```
+
+
+
+## Loading our dataset
+
+```{r}
+# Preview top 6 rows of data dataset
+
+sales <- read.csv("F:\\DATA\\Supermarket_Dataset_1 - Sales Data.csv")
+head(sales)
+
+```
+
+## Checking the data
+
+```{r}
+# Preview bottom 6 rows of 
+
+tail(sales)
+
+```
+
+Check shape of our dataset
+
+```{r}
+
+dim(sales)
+
+```
+our dataset has 1000 rows and 16 columns
+
+
+Check column names of Columns Present
+
+```{r}
+colnames(sales)
+```
+
+
+shows the data types of the data frame
+
+```{r}
+
+glimpse(sales)
+
+```
+
+Our dataset has 8 numerical variables and 8 factor variable.
+
+
+Check summary of our dataset
+
+```{r}
+summ <- pander(summary(sales))
+summ
+```
+This give of every variable there mean, max,min, datatype and quantiles for numerical variables and Length class and Mode for factor variables.
+
+
+## External Data Source Validation
+
+Making sure your data matches something outside of the dataset is very important. It allows you to ensure that the measurements are roughly in line with what they should be and it serves as a check on what other things might be wrong in your dataset. External validation can often be as simple as checking your data against a single number, as we will do here.
+
+
+## Tidying the Dataset
+
+We start by checking for null values in our dataset
+
+```{r}
+
+# Check for missing values
+
+colSums(is.na(sales))
+
+```
+Our dataset has no null values
+
+
+Remove Duplicated values
+```{r}
+dt <- unique(sales)
+dim(dt)
+```
+There are no duplicated values
+
+
+Drop ID column
+
+```{r}
+dt$Invoice.ID <- NULL
+
+```
+
+
+
+convert Factors variables to Numeric 
+
+```{r}
+
+dt_numeric = dt
+
+dt_numeric$Date <- NULL
+dt_numeric$Time <- NULL
+dt_numeric$gross.margin.percentage <- NULL
+
+
+conv <- c("Branch", "Customer.type", "Gender", "Product.line", "Payment")
+
+dt_numeric$Branch <- as.numeric(as.factor(dt_numeric$Branch))
+dt_numeric$Customer.type <- as.numeric(as.factor(dt_numeric$Customer.type))
+dt_numeric$Gender <- as.numeric(as.factor(dt_numeric$Gender))
+dt_numeric$Product.line <- as.numeric(as.factor(dt_numeric$Product.line))
+dt_numeric$Payment <- as.numeric(as.factor(dt_numeric$Payment))
+glimpse(dt_numeric)
+```
+convert factors variables to numeric
+
+convert Date variables to Date
+```{r}
+
+dt$Date <- as.Date(dt$Date,  tryFormats = c("%m-%d-%Y", "%m/%d/%Y"))
+
+str(dt$Date)
+
+```
+
+
+## Feature Selection
+
+Method 1 - Filter Methods  
+
+
+```{r}
+correlationMatrix <- cor(dt_numeric)
+
+
+```
+
+
+Find attributes that are highly correlated
+
+```{r}
+
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.90)
+names(dt_numeric[,highlyCorrelated])
+```
+
+
+We can remove the variables with a higher correlation and comparing the results graphically as shown .
+
+```{r}
+
+dt_clean <- dt_numeric[-highlyCorrelated]
+
+```
+
+Performing our graphical comparison
+
+```{r}
+
+par(mfrow = c(1, 2))
+corrplot(correlationMatrix, order = "hclust")
+corrplot(cor(dt_clean), order = "hclust")
+
+```
+
+View Correlation Matrix
+
+```{r}
+
+correlation <- data.frame(correlationMatrix)
+correlation
+
+```
+
+
+Extract product line correlations
+
+```{r}
+product <- data.frame(correlation$Product.line, row.names = rownames(correlation))
+product
+
+```
+
+Select Features
+
+```{r}
+
+Featureselected <- data.frame(product[product["correlation.Product.line"] > 0],row.names = c("Branch","Gender","Product.line","Unit.price", "Quantity", "Tax", "Payment", "cogs", "gross.income"))
+Featureselected
+
+```
+

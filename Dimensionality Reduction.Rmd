@@ -1,0 +1,242 @@
+---
+title: "Dimensionality Reduction"
+author: "Duncan Wahira"
+date: "7/27/2020"
+output: pdf_document
+---
+
+Perform and visualize PCA in the given dataset 
+
+
+## Load Libraries
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tibble)
+library(pander)
+library(Hmisc)
+library(tidyverse)
+library(corrplot)
+
+```
+
+
+
+## Loading our dataset
+
+```{r}
+# Preview top 6 rows of data dataset
+
+sales <- read.csv("F:\\DATA\\Supermarket_Dataset_1 - Sales Data.csv")
+head(sales)
+
+```
+
+## Checking the data
+
+```{r}
+# Preview bottom 6 rows of 
+
+tail(sales)
+
+```
+
+Check shape of our dataset
+
+```{r}
+
+dim(sales)
+
+```
+our dataset has 1000 rows and 16 columns
+
+
+Check column names of Columns Present
+
+```{r}
+colnames(sales)
+```
+
+
+shows the data types of the data frame
+
+```{r}
+
+glimpse(sales)
+
+```
+
+Our dataset has 8 numerical variables and 8 factor variable.
+
+
+Check summary of our dataset
+
+```{r}
+summ <- pander(summary(sales))
+summ
+```
+This give of every variable there mean, max,min, datatype and quantiles for numerical variables and Length class and Mode for factor variables.
+
+
+## External Data Source Validation
+
+Making sure your data matches something outside of the dataset is very important. It allows you to ensure that the measurements are roughly in line with what they should be and it serves as a check on what other things might be wrong in your dataset. External validation can often be as simple as checking your data against a single number, as we will do here.
+
+
+## Tidying the Dataset
+
+We start by checking for null values in our dataset
+
+```{r}
+
+# Check for missing values
+
+colSums(is.na(sales))
+
+```
+Our dataset has no null values
+
+
+Remove Duplicated values
+```{r}
+dt <- unique(sales)
+dim(dt)
+```
+There are no duplicated values
+
+
+Drop ID column
+
+```{r}
+dt$Invoice.ID <- NULL
+
+```
+
+
+
+convert Factors variables to Numeric
+
+```{r}
+
+dt_numeric = dt
+
+dt_numeric$Date <- NULL
+dt_numeric$Time <- NULL
+
+conv <- c("Branch", "Customer.type", "Gender", "Product.line", "Payment")
+
+dt_numeric$Branch <- as.numeric(as.factor(dt_numeric$Branch))
+dt_numeric$Customer.type <- as.numeric(as.factor(dt_numeric$Customer.type))
+dt_numeric$Gender <- as.numeric(as.factor(dt_numeric$Gender))
+dt_numeric$Product.line <- as.numeric(as.factor(dt_numeric$Product.line))
+dt_numeric$Payment <- as.numeric(as.factor(dt_numeric$Payment))
+glimpse(dt_numeric)
+```
+convert factors variables to numeric
+
+convert Date variables to Date
+```{r}
+
+dt$Date <- as.Date(dt$Date,  tryFormats = c("%m-%d-%Y", "%m/%d/%Y"))
+
+str(dt$Date)
+
+```
+
+
+
+
+
+
+
+
+### Dimensionality Reduction
+
+Remove our target variable
+```{r}
+product <- dt_numeric$Product.line
+
+dt_numeric$Product.line <- NULL
+
+```
+
+
+We will first remove columns with no variability as PCA is trying to group things by maximizing variance
+
+```{r}
+
+dt_numeric <- dt_numeric[,apply(dt_numeric, 2, var, na.rm=TRUE) != 0]
+
+```
+
+
+
+We then pass df to the prcomp(). We also set two arguments, center and scale, to be TRUE then preview our object with summary
+
+```{r}
+dt_numeric.pca <- prcomp(dt_numeric, center = TRUE)
+summary(dt_numeric.pca)
+```
+
+As a result we obtain 11 principal components,each which explain a percentate of the total variation of the dataset.
+
+PC1 explains 99.63% of the total variance, which means that nearly all the variation.
+
+Of the information in the dataset (11 variables) can be encapsulated by just that one Principal Component. PC2 explains 0.3% of the variance, the variance explanated decrease as the principal components increase.
+
+
+
+Calling str() to have a look at your PCA object
+
+```{r}
+exe <- data.frame(str(dt_numeric.pca))
+exe
+```
+Here we note that our pca object: The center point ($center),standard deviation(sdev) of each principal component. 
+
+The relationship (correlation or anticorrelation, etc)between the initial variables and the principal components ($rotation). 
+
+The values of each sample in terms of the principal components ($x)
+
+
+
+
+We will now plot our pca. This will provide us with some very useful insights i.e. 
+which product line are most similar to each other 
+
+
+```{r}
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+ggbiplot(dt_numeric.pca)
+```
+
+
+
+Adding more detail to the plot, we provide arguments rownames as labels
+
+```{r, }
+ggbiplot(dt_numeric.pca,ellipse=TRUE,choices=c(1,2),   labels=rownames(dt_numeric$Branch), groups=product)
+```
+
+We now plot PC3 and PC4
+```{r}
+
+ggbiplot(dt_numeric.pca,ellipse=TRUE,choices=c(3,4),   labels=rownames(dt_numeric$Branch), groups=product)
+```
+
+We find it difficult to derive insights from the given plot mainly because PC3 and PC4 Explain very small percentages of the total variation, thus it would be surprising.
+
+
+
+
+
+
+
+
+
+
