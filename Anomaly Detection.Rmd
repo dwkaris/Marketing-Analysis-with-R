@@ -1,0 +1,107 @@
+---
+title: "Anomaly Detection"
+author: "Duncan Wahira"
+date: "7/28/2020"
+output: pdf_document
+---
+
+## Load Libraries
+
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tibble)
+library(pander)
+library(tidyverse)
+library(anomalize)
+
+```
+
+
+
+## Loading our dataset
+
+```{r}
+df <- read.csv("F:\\DATA\\Supermarket_Sales_Forecasting - Sales.csv")
+head(df)
+```
+
+
+convert Date column to Date data type
+
+```{r}
+df$Date <- as.Date(df$Date,  tryFormats = c("%m-%d-%Y", "%m/%d/%Y"))
+
+str(df$Date)
+```
+
+
+## Data Preprocessing
+
+For Anomaly Detection using anomalize, we need to have either a tibble or tibbletime object. Hence we have to convert the dataframe df into a tibble object that follows a time series shape and store it in df_tidy.
+
+```{r}
+df_tidy <- df %>% rownames_to_column() %>% as.tibble() %>% 
+  mutate(date = as.Date(Date)) %>% select(-one_of('Date'))
+```
+
+looking at the head of btc_ts to see sample data
+
+```{r}
+head(df_tidy)
+```
+
+```{r}
+df_tidy <- df_tidy %>% 
+tibbletime::as_tbl_time(index = "date")
+
+head(df_tidy)
+```
+
+
+
+## Analysis
+
+Time Series Decomposition with Anomalies
+
+
+One of the important things to do with Time Series data before starting with Time Series forecasting or Modelling is Time Series Decomposition where the Time series data is decomposed into Seasonal, Trend and remainder components. anomalize has got a function time_decompose() to perform the same. Once the components are decomposed, anomalize can detect and flag anomalies in the decomposed data of the reminder component which then could be visualized with plot_anomaly_decomposition() 
+
+```{r}
+
+df_tidy %>% 
+  time_decompose(Sales, method = "stl", frequency = "auto", trend = "auto") %>%
+  anomalize(remainder, method = "gesd", alpha = 0.05, max_anoms = 0.2) %>%
+  plot_anomaly_decomposition()
+
+```
+
+```{r}
+df_tidy %>% 
+  time_decompose(Sales) %>%
+  anomalize(remainder) %>%
+  time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol = 3, alpha_dots = 0.5)
+```
+
+
+
+
+```{r}
+df_tidy %>% 
+  time_decompose(Sales) %>%
+  anomalize(remainder) %>%
+  time_recompose() %>%
+  filter(anomaly == 'Yes') 
+```
+
+
+
+
+
+
+
+
