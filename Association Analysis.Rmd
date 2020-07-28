@@ -1,0 +1,202 @@
+## Load Libraries
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tibble)
+library(pander)
+library(Hmisc)
+library(tidyverse)
+library(corrplot)
+library(arules)
+```
+
+
+## Loading our dataset
+
+We will use read.transactions function which will load data from comma-separated files and convert them to the class transactions, which is the kind of data that we will require while working with models of association rules
+
+```{r}
+# Loading our transactions dataset from our csv file
+# Preview top 6 rows of data dataset
+
+df <- read.transactions("F:\\DATA\\Supermarket_Sales_Dataset II.csv")
+df
+```
+
+## Checking the data
+
+Verifying the object's class
+This should show us transactions as the type of data that we will need
+
+```{r}
+class(df)
+```
+
+Previewing our first 5 transactions
+
+```{r}
+
+inspect(df[1:5])
+
+```
+
+Preview the items that make up our dataset,
+```{r}
+items<-as.data.frame(itemLabels(df))
+colnames(items) <- "Item"
+head(items, 10)
+```
+
+
+Generating a summary of the transaction dataset
+This would give us some information such as the most purchased items, distribution of the item sets (no. of items purchased in each transaction), etc.
+
+```{r}
+summary(df)
+```
+
+## External Data Source Validation
+
+Making sure your data matches something outside of the dataset is very important. It allows you to ensure that the measurements are roughly in line with what they should be and it serves as a check on what other things might be wrong in your dataset. External validation can often be as simple as checking your data against a single number, as we will do here.
+
+
+
+Exploring the frequency of some articles transactions some operation in percentage terms of the total transactions. 
+
+```{r}
+
+itemFrequency(df[, 1:2],type = "absolute")
+round(itemFrequency(df[, 8:10],type = "relative")*100,2)
+
+```
+
+## EDA
+
+Producing a chart of frequencies and fitering to consider only items with a minimum percentage of support/ considering a top x of items
+
+Displaying top 10 most common items in the transactions dataset and the items whose relative importance is at least 10%
+
+```{r}
+
+par(mfrow = c(1, 2))
+
+# plot the frequency of items
+
+itemFrequencyPlot(df , topN = 10,col="darkgreen")
+itemFrequencyPlot(df , support = 0.05,col="darkred")
+
+```
+
+## Analysis
+
+Building a model based on association rules using the apriori function.
+
+We use Min Support as 0.001 and confidence as 0.8
+
+```{r}
+
+rules <- apriori (df, parameter = list(supp = 0.001, conf = 0.8))
+summary(rules)
+```
+
+Building apriori model with Min Support as 0.004 and confidence as 0.6.
+
+```{r}
+rules2 <- apriori (df ,parameter = list(supp = 0.004, conf = 0.8)) 
+
+summary(rules2)
+```
+
+
+Building apriori model with Min Support as 0.002 and confidence as 0.6.
+
+```{r}
+rules3 <- apriori (df, parameter = list(supp = 0.001, conf = 0.6)) 
+summary(rules3)
+```
+
+In our first analysis, we increased the minimum support of 0.001 to 0.004 and model rules went from 271 to only 37. This would lead us to understand that using a high level of support can make the model lose redudant rules but we should be careful not to lose intresting rules. In the third analysis, we decreased the minimum confidence level to 0.6 and the number of model rules went from 271 to 319. This would mean that using a low confidence level increases the number of rules to quite an extent and many will not be useful.
+
+
+Observing rules built in our model i.e. first 5 model rules2
+
+```{r}
+inspect(rules2[1:5])
+```
+
+Ordering these rules by a criteria such as the level of confidence then looking at the first five rules. 
+
+```{r}
+rule <- sort(rules, by="confidence", decreasing=TRUE)
+inspect(rule[1:5])
+```
+
+Interpretation
+
+If someone buys cookies they are 100% likely to buy yorgut too
+If someone buys burgers , they are 100% likely to buy wheat too
+If someone buys fries,escalope,pasta,mushroom , they are 100% likely to buy cream too
+The given five rules have a confidence of 100
+
+
+We can also use different criteria such as: (by = "lift")
+
+```{r}
+rule <- sort(rules, by="lift", decreasing=TRUE)
+inspect(rule[1:5])
+```
+
+by = "support"
+
+```{r}
+rule <- sort(rules, by="support", decreasing=TRUE)
+inspect(rule[1:10])
+
+```
+
+
+If we're interested in making a promotion relating to the sale of rice, we could create a subset of rules concerning these products 
+
+This would tell us the items that the customers bought before purchasing rice
+
+```{r}
+
+tea <- subset(rules, subset = rhs %pin% "tea")
+
+```
+
+```{r}
+# Then order by confidence
+tea<-sort(tea, by="confidence", decreasing=TRUE)
+inspect(tea)
+```
+
+
+Determine items that customers might buy ,who have previously bought tea?
+
+```{r}
+tea <- subset(rules, subset = lhs %pin% "tea")
+# Then order by confidence
+tea<-sort(tea, by="confidence", decreasing=TRUE)
+inspect(tea)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
