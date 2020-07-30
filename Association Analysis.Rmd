@@ -1,3 +1,54 @@
+---
+title: "Association Analysis"
+author: "Duncan Wahira"
+date: "7/27/2020"
+output: pdf_document
+
+---
+
+
+## 1. Define the Question
+
+
+### a. Specifying the question.
+
+As Data Scientists, we have been tasked by Carrefour Kenya with building a model that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax).. More specifically, they would like to learn the characteristics of there costomers hence help them in arranging products in there stores.
+
+### b. Define the Metrics of Success.
+Our metrics of Success is to be able to do a conclusive Association Analysis through the various methods.
+
+### c. Understand context
+
+Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax).
+
+### d. Record the experiment design 
+
+Below is the expected workflow of our Analysis
+
+1.   Data Cleaning and Preparation
+
+*   Load libraries and dataset
+*   Deal with missing values
+  
+2.   Perform EDA
+
+3.  Analysis  
+
+*   Building rules
+*   Provide a description of the rules
+
+4.  Check items bought before most frequently bought items are bought.
+5.  Check items after before most frequently bought items are bought.
+6.  Make conclusions & Challenge the solution
+
+### e. Data relevance
+
+To establish if the data is relevant to the question and the objectives of the experiment.
+
+Below is the link to the dataset
+
+http://bit.ly/SupermarketDatasetII
+
 ## Load Libraries
 
 ```{r}

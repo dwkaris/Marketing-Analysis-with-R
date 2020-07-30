@@ -5,6 +5,45 @@ date: "7/28/2020"
 output: pdf_document
 ---
 
+
+## 1. Define the Question
+
+
+### a. Specifying the question.
+
+As Data Scientists, we have been tasked by Carrefour Kenya with building a model that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax).More spefically detect anomalies in sales.
+
+### b. Define the Metrics of Success.
+
+Our metrics of Success is to be able to detect anomalies in sales.
+
+### c. Understand context
+
+Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax).
+
+### d. Record the experiment design 
+
+Below is the expected workflow of our Analysis
+
+1.   Data Cleaning and Preparation
+
+*   Load libraries and dataset
+*   Deal with missing values
+  
+2.  Perform EDA
+
+3.  Analysis  
+
+*  Anomaly detection
+
+### e. Data relevance
+
+To establish if the data is relevant to the question and the objectives of the experiment.
+
+Below is the link to the dataset
+
+http://bit.ly/CarreFourSalesDataset
+
 ## Load Libraries
 
 
@@ -17,7 +56,7 @@ library(tibble)
 library(pander)
 library(tidyverse)
 library(anomalize)
-
+library(lubridate)
 ```
 
 
@@ -48,17 +87,28 @@ df_tidy <- df %>% rownames_to_column() %>% as.tibble() %>%
   mutate(date = as.Date(Date)) %>% select(-one_of('Date'))
 ```
 
-looking at the head of btc_ts to see sample data
+
+looking at the head of df_tidy to see sample data
 
 ```{r}
 head(df_tidy)
 ```
 
-```{r}
-df_tidy <- df_tidy %>% 
-tibbletime::as_tbl_time(index = "date")
 
-head(df_tidy)
+```{r}
+df_mutate <- df_tidy %>%
+  mutate(year = year(date), month = month(date), day = day(date)) %>%
+  group_by(year, month, day)%>%
+  summarise(sums = mean(Sales))
+
+df_mutate
+```
+
+
+
+```{r}
+plot(sums ~ day, data=df_mutate, type = 'o')
+
 ```
 
 
@@ -70,6 +120,8 @@ Time Series Decomposition with Anomalies
 
 One of the important things to do with Time Series data before starting with Time Series forecasting or Modelling is Time Series Decomposition where the Time series data is decomposed into Seasonal, Trend and remainder components. anomalize has got a function time_decompose() to perform the same. Once the components are decomposed, anomalize can detect and flag anomalies in the decomposed data of the reminder component which then could be visualized with plot_anomaly_decomposition() 
 
+
+
 ```{r}
 
 df_tidy %>% 
@@ -77,25 +129,6 @@ df_tidy %>%
   anomalize(remainder, method = "gesd", alpha = 0.05, max_anoms = 0.2) %>%
   plot_anomaly_decomposition()
 
-```
-
-```{r}
-df_tidy %>% 
-  time_decompose(Sales) %>%
-  anomalize(remainder) %>%
-  time_recompose() %>%
-  plot_anomalies(time_recomposed = TRUE, ncol = 3, alpha_dots = 0.5)
-```
-
-
-
-
-```{r}
-df_tidy %>% 
-  time_decompose(Sales) %>%
-  anomalize(remainder) %>%
-  time_recompose() %>%
-  filter(anomaly == 'Yes') 
 ```
 
 
